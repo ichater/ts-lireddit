@@ -1,23 +1,28 @@
-import {MikroORM} from "@mikro-orm/core";
-// import { dirname } from "path";
-// import { Post } from "./entities/Post";
+import { MikroORM } from "@mikro-orm/core";
 import mikroConfig from "./mikro-orm.config";
-import express from 'express'
-
-
+import express from "express";
+import { ApolloServer } from "apollo-server-express";
+import { buildSchema } from "type-graphql";
+import { HelloResolver } from "./resolvers/hello";
 
 const main = async () => {
-   const orm = await MikroORM.init(mikroConfig);
-   await orm.getMigrator().up()
+  const orm = await MikroORM.init(mikroConfig);
+  await orm.getMigrator().up();
 
-   const app = express();
-   app.get('/', (_, res)=>{
-      res.send("Hola!")
-   })
-   app.listen(4000, ()=> {
-      console.log('listening on localhost:4000')
-   })
-}
+  const app = express();
 
-main().catch(err => { console.error(err)})
+  const appolloServer = new ApolloServer({
+    schema: await buildSchema({ resolvers: [HelloResolver], validate: false }),
+  });
 
+  await appolloServer.start();
+  appolloServer.applyMiddleware({ app });
+
+  app.listen(4000, () => {
+    console.log("listening on localhost:4000");
+  });
+};
+
+main().catch((err) => {
+  console.error(err);
+});
